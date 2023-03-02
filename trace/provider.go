@@ -31,7 +31,7 @@ func JaegerProvider(url string, service string, attr ...attribute.KeyValue) (*tr
 	// Create the Jaeger exporter
 	exp, err := jaeger.New(jaeger.WithCollectorEndpoint(jaeger.WithEndpoint(url)))
 	if err != nil {
-		return tracesdk.NewTracerProvider(), fmt.Errorf("failed to initialize Jaeger trace exporter: %w", err)
+		return NoopProvider(), fmt.Errorf("failed to initialize Jaeger trace exporter: %w", err)
 	}
 	return tracesdk.NewTracerProvider(
 		tracesdk.WithBatcher(exp),
@@ -45,14 +45,19 @@ func JaegerProvider(url string, service string, attr ...attribute.KeyValue) (*tr
 }
 
 // LoggingProvider creates a new batch Logging based TracerProvider.
-// Errors can be safely ignored as a TraceProvider with no exporter will always be returned in the event of an error.
+// Errors can be safely ignored as a NoopProvider will always be returned in the event of an error.
 func LoggingProvider() (*tracesdk.TracerProvider, error) {
 	exp, err := stdouttrace.New(stdouttrace.WithPrettyPrint())
 	if err != nil {
-		return tracesdk.NewTracerProvider(), fmt.Errorf("failed to initialize Logging trace exporter: %w", err)
+		return NoopProvider(), fmt.Errorf("failed to initialize Logging trace exporter: %w", err)
 	}
 	return tracesdk.NewTracerProvider(
 		tracesdk.WithSampler(tracesdk.AlwaysSample()),
 		tracesdk.WithSpanProcessor(tracesdk.NewBatchSpanProcessor(exp)),
 	), nil
+}
+
+// NoopProvider returns an TraceProvider with no exporters.
+func NoopProvider() *tracesdk.TracerProvider {
+	return tracesdk.NewTracerProvider()
 }
